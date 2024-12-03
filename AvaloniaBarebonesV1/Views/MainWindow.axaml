@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaBarebonesV1.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="using:AvaloniaBarebonesV1"
+        xmlns:nlog="using:AvaloniaBarebonesV1.NLogMVVM.Controls"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="AvaloniaBarebonesV1.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        DataContext="{local:DISource Type=vm:MainWindowViewModel}"
+        Title="AvaloniaBarebonesV1">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+    <Grid RowDefinitions="Auto,5,*">
+        <StackPanel Margin="20">
+            <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Slider Minimum="1" Maximum="10"
+                    Value="{Binding SliderVal}" Width="200"
+                    Name="BarWidthSlider" />
+            <Button Content="Press Me" Command="{Binding UpdateGreetingCommand}" HorizontalAlignment="Center" />
+        </StackPanel>
+        <GridSplitter Grid.Row="1" Background="LightGray" />
+        <nlog:NLogViewerControl Grid.Row="2" DataContext="{Binding NlogVM}" />
+    </Grid>
+
+
+</Window>

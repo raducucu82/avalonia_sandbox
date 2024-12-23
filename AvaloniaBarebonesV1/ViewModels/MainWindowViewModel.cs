@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.ReactiveUI;
 using AvaloniaBarebonesV1.NLogMVVM.ViewModels;
 using AvaloniaBarebonesV1.Services.Interfaces;
 using AvaloniaBarebonesV1.ViewModels.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NLog;
+using NLog.Fluent;
 
 namespace AvaloniaBarebonesV1.ViewModels;
 
@@ -17,6 +23,7 @@ public partial class MainWindowViewModel : ObservableViewModelBase, IViewModelLi
     private IDisposable? _subscription = null;
 
     [ObservableProperty] private int _sliderVal;
+    [ObservableProperty] private int _result = 0;
     
     public NLogViewerControlViewModel? NlogVM { get; }
     
@@ -51,20 +58,79 @@ public partial class MainWindowViewModel : ObservableViewModelBase, IViewModelLi
         Logger.Log(logLevels[rg.Next(logLevels.Count)], "Button Clicked!Button ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton ClickedButton Clicked!!!!!!!!!!!!!!!!!!!!!!!! ");
     }
 
-    public void Loaded(Control view)
+    public void Loaded(Visual view)
     {
         Logger.Info("VM Loaded.");
         _subscription = ObservePropertyChangedEvent()
             .Subscribe(args =>
             {
-                // Console.WriteLine($" -> {args.PropertyName}");
                 Logger.Debug($"{args.PropertyName} changed.");
             });
+
+        if (false)
+        {
+            DoOnPropertyChangedEvent(
+                nameof(SliderVal),
+                TimeSpan.FromMilliseconds(200), 
+                async ct =>
+                {
+                    Result = await GetResultLongRunning(SliderVal, ct);
+                },
+                Logger);
+        }
+        else
+        {
+            // Pass the result along the chain. Overly complex, for show.
+            ObserveOnPropertyChangedWithCancel(
+                    nameof(SliderVal),
+                    TimeSpan.FromMilliseconds(500)).
+                SelectMany(ct =>
+                {
+                    Logger.Debug("Passed throttle");
+                    return Observable.FromAsync(async () =>
+                    {
+                        try
+                        {
+                            return (r: await GetResultLongRunning(SliderVal, ct), ct);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                        }
+ 
+                        return (r: default, ct);
+                    });
+                }).
+                Where(tuple => (!tuple.ct.IsCancellationRequested) && (tuple.r != default)).
+                Select(tuple => tuple.r).
+                ObserveOn(AvaloniaScheduler.Instance).
+                Subscribe(result =>
+                {
+                    Result = result;
+                });
+        }
     }
 
-    public void Unloaded(Control view)
+    public void Unloaded(Visual view)
     {
         Logger.Info("VM Unloaded");
         _subscription?.Dispose();
+    }
+
+    private async Task<int> GetResultLongRunning(int val, CancellationToken ct)
+    {
+        Logger.Info($"Started for {val}");
+        try
+        {
+            var result = val * 2;
+            await Task.Delay(3000, ct);
+            Logger.Info($"Done for {val}: {result}");
+
+            return result;
+        }
+        catch (OperationCanceledException e)
+        {
+            Logger.Info($"Canceled for {val}");
+            throw;
+        }
     }
 }

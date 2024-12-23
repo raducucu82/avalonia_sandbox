@@ -23,6 +23,7 @@
             <Slider Minimum="1" Maximum="10"
                     Value="{Binding SliderVal}" Width="200"
                     Name="BarWidthSlider" />
+            <Label Content="{Binding Result}" HorizontalAlignment="Center"/>
             <Button Content="Press Me" Command="{Binding UpdateGreetingCommand}" HorizontalAlignment="Center" />
         </StackPanel>
         <GridSplitter Grid.Row="1" Background="LightGray" />
